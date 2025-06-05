@@ -1,6 +1,8 @@
 import jsforce from 'jsforce';
 import { SalesforceConfig, SalesforceConnection } from '../types/index.js';
 import { getSalesforceConfig } from '../utils/config.js';
+import { logger } from '../utils/logger.js';
+import { handleSalesforceError } from '../utils/error-handler.js';
 
 export class SalesforceAuth {
   private connection: jsforce.Connection | null = null;
@@ -22,7 +24,7 @@ export class SalesforceAuth {
         this.config.password + this.config.securityToken
       );
 
-      console.log('Connected to Salesforce:', {
+      logger.info('Connected to Salesforce:', {
         id: userInfo.id,
         organizationId: userInfo.organizationId,
         url: userInfo.url
@@ -34,8 +36,9 @@ export class SalesforceAuth {
         isConnected: true
       };
     } catch (error) {
-      console.error('Salesforce authentication failed:', error);
-      throw new Error(`Failed to authenticate with Salesforce: ${error}`);
+      logger.error('Salesforce authentication failed:', error);
+      const errorResult = handleSalesforceError(error, 'authentication');
+      throw new Error(errorResult.error);
     }
   }
 
@@ -55,7 +58,7 @@ export class SalesforceAuth {
       try {
         await this.connection.logout();
       } catch (error) {
-        console.warn('Error during logout:', error);
+        logger.warn('Error during logout:', error);
       } finally {
         this.connection = null;
       }
