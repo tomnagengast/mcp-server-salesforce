@@ -102,7 +102,11 @@ This guide will walk you through setting up the Salesforce MCP server from scrat
 
 **Option A: NPX Installation (Recommended)**
 
-No installation required! NPX will download and run the server automatically when configured in Claude Desktop.
+No installation required! NPX will download and run the server automatically from GitHub when configured in Claude Desktop.
+
+```bash
+npx github:tomnagengast/mcp-server-salesforce
+```
 
 **Option B: Local Development Installation**
 
@@ -201,7 +205,7 @@ No installation required! NPX will download and run the server automatically whe
      "mcpServers": {
        "salesforce": {
          "command": "npx",
-         "args": ["mcp-server-salesforce"],
+         "args": ["github:tomnagengast/mcp-server-salesforce"],
          "env": {
            "SALESFORCE_LOGIN_URL": "https://login.salesforce.com",
            "SALESFORCE_CLIENT_ID": "your_consumer_key",

@@ -35,9 +35,9 @@ This includes:
 
 ### Installation Options
 
-**Option 1: NPX (Recommended)**
+**Option 1: NPX from GitHub**
 ```bash
-npx mcp-server-salesforce
+npx github:tomnagengast/mcp-server-salesforce
 ```
 
 **Option 2: Clone and Build**
@@ -88,7 +88,7 @@ Add this to your Claude Desktop config (`~/Library/Application Support/Claude/cl
   "mcpServers": {
     "salesforce": {
       "command": "npx",
-      "args": ["mcp-server-salesforce"],
+      "args": ["github:tomnagengast/mcp-server-salesforce"],
       "env": {
         "SALESFORCE_CLIENT_ID": "your_client_id",
         "SALESFORCE_CLIENT_SECRET": "your_client_secret",
