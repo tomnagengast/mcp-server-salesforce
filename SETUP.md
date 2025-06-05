@@ -34,10 +34,18 @@ This guide will walk you through setting up the Salesforce MCP server from scrat
 5. **Configure OAuth Settings**
    - Check "Enable OAuth Settings"
    - **Callback URL**: `https://localhost:3000/oauth/callback` (placeholder)
-   - **Selected OAuth Scopes**: Add these scopes:
-     - `Full access (full)`
-     - `Perform requests on your behalf at any time (refresh_token, offline_access)`
-     - `Access and manage your data (api)`
+   - **Selected OAuth Scopes**: Choose based on your usage:
+   
+   **For Read-Only Mode (Recommended to start):**
+   - `Access and manage your data (api)` - Required for read operations
+   - `Perform requests on your behalf at any time (refresh_token, offline_access)` - For session management
+   
+   **For Full Access (When ready for write operations):**
+   - `Full access (full)` - Required for create/update/delete operations
+   - `Perform requests on your behalf at any time (refresh_token, offline_access)` - For session management
+   
+   > 🔒 **Security Best Practice**: Start with read-only scopes and upgrade to full access only when needed.
+   
    - **Require Secret for Web Server Flow**: Check this box
 
 6. **Save the Connected App**
@@ -249,7 +257,12 @@ Try these commands in Claude Desktop:
    Show me details for account ID 001XXXXXXXXXX
    ```
 
-3. **Create a test record:**
+3. **Test read operations (available in read-only mode):**
+   ```
+   Find all opportunities closing this quarter
+   ```
+
+4. **Test write operations (only if SALESFORCE_READ_ONLY_MODE=false):**
    ```
    Create a new contact with name "Test User" and email "test@example.com"
    ```
@@ -264,20 +277,27 @@ Test that the server respects your Salesforce permissions:
 
 ## Security Best Practices
 
-### 1. Credential Management
+### 1. Scope Management
+
+- **Start with minimal scopes** - Use `api` scope for read-only access
+- **Upgrade only when needed** - Add `full` scope only for write operations
+- **Regular scope audits** - Review and remove unnecessary permissions
+- **Environment-specific scopes** - Use different scopes for dev vs production
+
+### 2. Credential Management
 
 - **Never commit credentials** to version control
 - **Use environment variables** for all sensitive data
 - **Regularly rotate** your security token
 - **Use sandbox** for development and testing
 
-### 2. IP Security
+### 3. IP Security
 
 - **Configure IP ranges** in your Connected App for production
 - **Use VPN** or fixed IP addresses when possible
 - **Monitor login history** in Salesforce
 
-### 3. Permission Management
+### 4. Permission Management
 
 - **Use least privilege** principle for API user
 - **Create dedicated API user** for production use
@@ -297,6 +317,7 @@ Test that the server respects your Salesforce permissions:
 - Verify user has "API Enabled" permission
 - Check object-level permissions
 - Verify field-level security settings
+- Ensure OAuth scopes match your intended operations (api vs full)
 
 **"Claude Desktop doesn't see the server"**
 - Check file path in config is correct
@@ -318,9 +339,23 @@ Test that the server respects your Salesforce permissions:
 
 ## Enabling Write Operations
 
-The server starts in read-only mode for safety. When you're comfortable with the server's behavior:
+The server starts in read-only mode for safety. When you're ready to enable write operations:
 
-### Option 1: Environment Variable
+### Prerequisites: Update OAuth Scopes
+
+**Important**: If you initially set up your Connected App with read-only scopes, you'll need to update it first:
+
+1. **Go back to your Connected App in Salesforce Setup**
+2. **Click "Edit Policies"**
+3. **Update Selected OAuth Scopes to include:**
+   - `Full access (full)` - Required for create/update/delete operations
+   - `Perform requests on your behalf at any time (refresh_token, offline_access)` - Keep this one
+4. **Save the changes**
+5. **Wait 2-10 minutes** for the scope changes to take effect
+
+### Enable Write Mode
+
+#### Option 1: Environment Variable
 1. **Edit your .env file:**
    ```env
    SALESFORCE_READ_ONLY_MODE=false
@@ -331,7 +366,7 @@ The server starts in read-only mode for safety. When you're comfortable with the
    npm run dev
    ```
 
-### Option 2: Claude Desktop Config
+#### Option 2: Claude Desktop Config
 1. **Add to your config:**
    ```json
    {
