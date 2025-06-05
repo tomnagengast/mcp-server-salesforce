@@ -14,9 +14,6 @@ This is a Salesforce MCP (Model Context Protocol) server that enables AI agents 
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint for code quality checks
 
-### Testing
-- `npm test` - Run Jest tests (when implemented)
-
 ## Architecture
 
 ### Core Components
@@ -64,3 +61,4 @@ Copy `.env.example` to `.env` and configure:
 - Server connects to Salesforce on first tool request
 - All operations respect Salesforce user permissions and field-level security
 - Uses MCP stdio transport - designed to be called by MCP clients, not directly accessed via HTTP
+- Server defaults to read-only mode (`SALESFORCE_READ_ONLY_MODE=true`) for safety

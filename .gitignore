@@ -1,3 +1,6 @@
+# Claude
+settings.local.json
+
 # Dependencies
 node_modules/
 npm-debug.log*
