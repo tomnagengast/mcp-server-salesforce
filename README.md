@@ -33,26 +33,22 @@ This includes:
 - Claude Desktop integration
 - Step-by-step screenshots and troubleshooting
 
-### Basic Installation
+### Installation Options
 
-1. Clone and install:
+**Option 1: NPX (Recommended)**
 ```bash
-git clone <repository-url>
+npx mcp-server-salesforce
+```
+
+**Option 2: Clone and Build**
+```bash
+git clone https://github.com/tomnagengast/mcp-server-salesforce.git
 cd mcp-server-salesforce
 npm install
-```
-
-2. Configure Salesforce (see [SETUP.md](./SETUP.md) for details):
-```bash
-cp .env.example .env
-# Edit .env with your Salesforce credentials
-```
-
-3. Build and test:
-```bash
 npm run build
-npm run dev
 ```
+
+**Configuration:** See [SETUP.md](./SETUP.md) for complete setup instructions including Salesforce Connected App configuration.
 
 ## Configuration
 
@@ -86,6 +82,27 @@ SALESFORCE_READ_ONLY_MODE=true
 
 Add this to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
+**For NPX installation:**
+```json
+{
+  "mcpServers": {
+    "salesforce": {
+      "command": "npx",
+      "args": ["mcp-server-salesforce"],
+      "env": {
+        "SALESFORCE_CLIENT_ID": "your_client_id",
+        "SALESFORCE_CLIENT_SECRET": "your_client_secret",
+        "SALESFORCE_USERNAME": "your_username", 
+        "SALESFORCE_PASSWORD": "your_password",
+        "SALESFORCE_SECURITY_TOKEN": "your_token",
+        "SALESFORCE_READ_ONLY_MODE": "true"
+      }
+    }
+  }
+}
+```
+
+**For local installation:**
 ```json
 {
   "mcpServers": {

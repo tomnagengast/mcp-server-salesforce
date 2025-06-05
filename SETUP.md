@@ -35,17 +35,17 @@ This guide will walk you through setting up the Salesforce MCP server from scrat
    - Check "Enable OAuth Settings"
    - **Callback URL**: `https://localhost:3000/oauth/callback` (placeholder)
    - **Selected OAuth Scopes**: Choose based on your usage:
-   
+
    **For Read-Only Mode (Recommended to start):**
-   - `Access and manage your data (api)` - Required for read operations
-   - `Perform requests on your behalf at any time (refresh_token, offline_access)` - For session management
-   
+   - `Manage user data via APls (api) ` - Required for read operations
+   - `Perform requests at any time (refresh_token, offline_access)` - For session management
+
    **For Full Access (When ready for write operations):**
    - `Full access (full)` - Required for create/update/delete operations
-   - `Perform requests on your behalf at any time (refresh_token, offline_access)` - For session management
-   
+   - `Perform requests at any time (refresh_token, offline_access)` - For session management
+
    > 🔒 **Security Best Practice**: Start with read-only scopes and upgrade to full access only when needed.
-   
+
    - **Require Secret for Web Server Flow**: Check this box
 
 6. **Save the Connected App**
@@ -81,7 +81,7 @@ This guide will walk you through setting up the Salesforce MCP server from scrat
 
 3. **Save Your Credentials**
    - **Username**: Your Salesforce username
-   - **Password**: Your Salesforce password  
+   - **Password**: Your Salesforce password
    - **Security Token**: From the email you just received
 
 ### Step 4: Test API Access (Optional)
@@ -100,11 +100,18 @@ This guide will walk you through setting up the Salesforce MCP server from scrat
 
 ### Step 1: Install the MCP Server
 
+**Option A: NPX Installation (Recommended)**
+
+No installation required! NPX will download and run the server automatically when configured in Claude Desktop.
+
+**Option B: Local Development Installation**
+
 1. **Clone and Setup Project**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/tomnagengast/mcp-server-salesforce.git
    cd mcp-server-salesforce
    npm install
+   npm run build
    ```
 
 2. **Configure Environment Variables**
@@ -128,7 +135,7 @@ This guide will walk you through setting up the Salesforce MCP server from scrat
    # Server Configuration
    PORT=3000
    LOG_LEVEL=info
-   
+
    # Security - Server starts in READ-ONLY mode by default for safety
    SALESFORCE_READ_ONLY_MODE=true
    ```
@@ -180,26 +187,29 @@ This guide will walk you through setting up the Salesforce MCP server from scrat
    ```bash
    # macOS
    nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
-   
+
    # Or create if it doesn't exist
    mkdir -p ~/Library/Application\ Support/Claude
    touch ~/Library/Application\ Support/Claude/claude_desktop_config.json
    ```
 
 2. **Add MCP Server Configuration**
+
+   **For NPX Installation (Recommended):**
    ```json
    {
      "mcpServers": {
        "salesforce": {
-         "command": "node",
-         "args": ["/path/to/your/mcp-server-salesforce/dist/index.js"],
+         "command": "npx",
+         "args": ["mcp-server-salesforce"],
          "env": {
            "SALESFORCE_LOGIN_URL": "https://login.salesforce.com",
            "SALESFORCE_CLIENT_ID": "your_consumer_key",
-           "SALESFORCE_CLIENT_SECRET": "your_consumer_secret", 
+           "SALESFORCE_CLIENT_SECRET": "your_consumer_secret",
            "SALESFORCE_USERNAME": "your_username",
            "SALESFORCE_PASSWORD": "your_password",
            "SALESFORCE_SECURITY_TOKEN": "your_token",
+           "SALESFORCE_READ_ONLY_MODE": "true",
            "LOG_LEVEL": "info"
          }
        }
@@ -207,7 +217,20 @@ This guide will walk you through setting up the Salesforce MCP server from scrat
    }
    ```
 
-   **Important**: Replace `/path/to/your/mcp-server-salesforce` with the actual path to your project.
+   **For Local Installation:**
+   ```json
+   {
+     "mcpServers": {
+       "salesforce": {
+         "command": "node",
+         "args": ["/path/to/your/mcp-server-salesforce/dist/index.js"],
+         "cwd": "/path/to/your/mcp-server-salesforce"
+       }
+     }
+   }
+   ```
+
+   > **Note**: For NPX installation, no local path is needed. For local installation, replace `/path/to/your/mcp-server-salesforce` with the actual path to your project.
 
 ### Step 3: Alternative: Using .env File
 
@@ -388,7 +411,7 @@ The server starts in read-only mode for safety. When you're ready to enable writ
 
 You'll now have access to:
 - ✅ `create_record` - Create new records
-- ✅ `update_record` - Update existing records  
+- ✅ `update_record` - Update existing records
 - ✅ `delete_record` - Delete records
 
 > ⚠️ **Warning**: These operations modify your Salesforce data. Test in a sandbox first!
