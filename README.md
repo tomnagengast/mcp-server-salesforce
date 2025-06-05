@@ -19,28 +19,34 @@ A Model Context Protocol (MCP) server that provides AI agents with secure access
 - **Cases**: Customer service and support tickets
 - **Activities**: Tasks and events
 
-## Installation
+## Quick Start
 
-1. Clone the repository:
+**🚀 For complete setup instructions, see [SETUP.md](./SETUP.md)**
+
+This includes:
+- Salesforce Connected App configuration
+- Claude Desktop integration
+- Step-by-step screenshots and troubleshooting
+
+### Basic Installation
+
+1. Clone and install:
 ```bash
 git clone <repository-url>
 cd mcp-server-salesforce
-```
-
-2. Install dependencies:
-```bash
 npm install
 ```
 
-3. Set up environment variables:
+2. Configure Salesforce (see [SETUP.md](./SETUP.md) for details):
 ```bash
 cp .env.example .env
 # Edit .env with your Salesforce credentials
 ```
 
-4. Build the project:
+3. Build and test:
 ```bash
 npm run build
+npm run dev
 ```
 
 ## Configuration
@@ -66,17 +72,23 @@ PORT=3000
 LOG_LEVEL=info
 ```
 
-### Salesforce Setup
+## Claude Desktop Integration
 
-1. **Create a Connected App** in Salesforce:
-   - Go to Setup → App Manager → New Connected App
-   - Enable OAuth Settings
-   - Add required OAuth scopes: `full`, `refresh_token`
-   - Note the Client ID and Client Secret
+Add this to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
-2. **Get Security Token**:
-   - Go to Personal Settings → Reset My Security Token
-   - Check your email for the security token
+```json
+{
+  "mcpServers": {
+    "salesforce": {
+      "command": "node",
+      "args": ["/path/to/your/mcp-server-salesforce/dist/index.js"],
+      "cwd": "/path/to/your/mcp-server-salesforce"
+    }
+  }
+}
+```
+
+**See [SETUP.md](./SETUP.md) for complete integration instructions.**
 
 ## Usage
 
