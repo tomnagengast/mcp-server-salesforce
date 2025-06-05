@@ -12,6 +12,8 @@ import { SalesforceAuth } from './auth/salesforce-auth.js';
 import { SearchTools } from './tools/search-tools.js';
 import { CrudTools } from './tools/crud-tools.js';
 import { RelationshipTools } from './tools/relationship-tools.js';
+import { getSalesforceConfig } from './utils/config.js';
+import { logger } from './utils/logger.js';
 
 class SalesforceServer {
   private server: Server;
@@ -19,8 +21,17 @@ class SalesforceServer {
   private searchTools: SearchTools;
   private crudTools: CrudTools;
   private relationshipTools: RelationshipTools;
+  private config: ReturnType<typeof getSalesforceConfig>;
 
   constructor() {
+    this.config = getSalesforceConfig();
+    
+    if (this.config.readOnlyMode) {
+      logger.info('🔒 Salesforce MCP Server starting in READ-ONLY mode for safety');
+      logger.info('   Set SALESFORCE_READ_ONLY_MODE=false to enable write operations');
+    } else {
+      logger.warn('⚠️  Salesforce MCP Server starting with WRITE access enabled');
+    }
     this.server = new Server(
       {
         name: 'salesforce-mcp-server',
@@ -43,133 +54,138 @@ class SalesforceServer {
 
   private setupToolHandlers(): void {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
+      const readOnlyTools = [
+        // Search Tools
+        {
+          name: 'search_records',
+          description: 'Search for Salesforce records across multiple objects',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: { type: 'string', description: 'Search query string' },
+              objects: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Object types to search (e.g., Account, Contact, Lead)',
+              },
+              limit: { type: 'number', description: 'Maximum number of records to return', default: 20 },
+            },
+            required: ['query'],
+          },
+        },
+        {
+          name: 'soql_query',
+          description: 'Execute a SOQL query against Salesforce (read-only)',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: { type: 'string', description: 'SOQL query string (SELECT statements only)' },
+            },
+            required: ['query'],
+          },
+        },
+        {
+          name: 'global_search',
+          description: 'Perform a global search across all Salesforce objects',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              searchTerm: { type: 'string', description: 'Term to search for' },
+              limit: { type: 'number', description: 'Maximum number of records to return', default: 20 },
+            },
+            required: ['searchTerm'],
+          },
+        },
+        {
+          name: 'get_record',
+          description: 'Retrieve a specific Salesforce record by ID',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              objectType: { type: 'string', description: 'Salesforce object type (e.g., Account, Contact)' },
+              recordId: { type: 'string', description: 'Salesforce record ID' },
+              fields: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Fields to retrieve (optional, defaults to common fields)',
+              },
+            },
+            required: ['objectType', 'recordId'],
+          },
+        },
+        {
+          name: 'get_related_records',
+          description: 'Get records related to a specific record',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              objectType: { type: 'string', description: 'Parent object type' },
+              recordId: { type: 'string', description: 'Parent record ID' },
+              relationship: { type: 'string', description: 'Relationship name (e.g., Contacts, Opportunities)' },
+              limit: { type: 'number', description: 'Maximum number of records to return', default: 20 },
+            },
+            required: ['objectType', 'recordId', 'relationship'],
+          },
+        },
+        {
+          name: 'get_record_history',
+          description: 'Get the field history for a record',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              objectType: { type: 'string', description: 'Object type' },
+              recordId: { type: 'string', description: 'Record ID' },
+              limit: { type: 'number', description: 'Maximum number of history records', default: 20 },
+            },
+            required: ['objectType', 'recordId'],
+          },
+        },
+      ];
+
+      const writeTools = [
+        {
+          name: 'create_record',
+          description: 'Create a new Salesforce record (WRITE ACCESS REQUIRED)',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              objectType: { type: 'string', description: 'Salesforce object type (e.g., Account, Contact)' },
+              data: { type: 'object', description: 'Record data as key-value pairs' },
+            },
+            required: ['objectType', 'data'],
+          },
+        },
+        {
+          name: 'update_record',
+          description: 'Update an existing Salesforce record (WRITE ACCESS REQUIRED)',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              objectType: { type: 'string', description: 'Salesforce object type (e.g., Account, Contact)' },
+              recordId: { type: 'string', description: 'Salesforce record ID' },
+              data: { type: 'object', description: 'Updated record data as key-value pairs' },
+            },
+            required: ['objectType', 'recordId', 'data'],
+          },
+        },
+        {
+          name: 'delete_record',
+          description: 'Delete a Salesforce record (WRITE ACCESS REQUIRED)',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              objectType: { type: 'string', description: 'Salesforce object type (e.g., Account, Contact)' },
+              recordId: { type: 'string', description: 'Salesforce record ID' },
+            },
+            required: ['objectType', 'recordId'],
+          },
+        },
+      ];
+
+      const availableTools = this.config.readOnlyMode ? readOnlyTools : [...readOnlyTools, ...writeTools];
+
       return {
-        tools: [
-          // Search Tools
-          {
-            name: 'search_records',
-            description: 'Search for Salesforce records across multiple objects',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                query: { type: 'string', description: 'Search query string' },
-                objects: {
-                  type: 'array',
-                  items: { type: 'string' },
-                  description: 'Object types to search (e.g., Account, Contact, Lead)',
-                },
-                limit: { type: 'number', description: 'Maximum number of records to return', default: 20 },
-              },
-              required: ['query'],
-            },
-          },
-          {
-            name: 'soql_query',
-            description: 'Execute a SOQL query against Salesforce',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                query: { type: 'string', description: 'SOQL query string' },
-              },
-              required: ['query'],
-            },
-          },
-          {
-            name: 'global_search',
-            description: 'Perform a global search across all Salesforce objects',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                searchTerm: { type: 'string', description: 'Term to search for' },
-                limit: { type: 'number', description: 'Maximum number of records to return', default: 20 },
-              },
-              required: ['searchTerm'],
-            },
-          },
-          // CRUD Tools
-          {
-            name: 'get_record',
-            description: 'Retrieve a specific Salesforce record by ID',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                objectType: { type: 'string', description: 'Salesforce object type (e.g., Account, Contact)' },
-                recordId: { type: 'string', description: 'Salesforce record ID' },
-                fields: {
-                  type: 'array',
-                  items: { type: 'string' },
-                  description: 'Fields to retrieve (optional, defaults to common fields)',
-                },
-              },
-              required: ['objectType', 'recordId'],
-            },
-          },
-          {
-            name: 'create_record',
-            description: 'Create a new Salesforce record',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                objectType: { type: 'string', description: 'Salesforce object type (e.g., Account, Contact)' },
-                data: { type: 'object', description: 'Record data as key-value pairs' },
-              },
-              required: ['objectType', 'data'],
-            },
-          },
-          {
-            name: 'update_record',
-            description: 'Update an existing Salesforce record',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                objectType: { type: 'string', description: 'Salesforce object type (e.g., Account, Contact)' },
-                recordId: { type: 'string', description: 'Salesforce record ID' },
-                data: { type: 'object', description: 'Updated record data as key-value pairs' },
-              },
-              required: ['objectType', 'recordId', 'data'],
-            },
-          },
-          {
-            name: 'delete_record',
-            description: 'Delete a Salesforce record',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                objectType: { type: 'string', description: 'Salesforce object type (e.g., Account, Contact)' },
-                recordId: { type: 'string', description: 'Salesforce record ID' },
-              },
-              required: ['objectType', 'recordId'],
-            },
-          },
-          // Relationship Tools
-          {
-            name: 'get_related_records',
-            description: 'Get records related to a specific record',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                objectType: { type: 'string', description: 'Parent object type' },
-                recordId: { type: 'string', description: 'Parent record ID' },
-                relationship: { type: 'string', description: 'Relationship name (e.g., Contacts, Opportunities)' },
-                limit: { type: 'number', description: 'Maximum number of records to return', default: 20 },
-              },
-              required: ['objectType', 'recordId', 'relationship'],
-            },
-          },
-          {
-            name: 'get_record_history',
-            description: 'Get the field history for a record',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                objectType: { type: 'string', description: 'Object type' },
-                recordId: { type: 'string', description: 'Record ID' },
-                limit: { type: 'number', description: 'Maximum number of history records', default: 20 },
-              },
-              required: ['objectType', 'recordId'],
-            },
-          },
-        ],
+        tools: availableTools,
       };
     });
 
@@ -184,6 +200,23 @@ class SalesforceServer {
 
         if (!args) {
           throw new Error('Missing required arguments');
+        }
+
+        // Block write operations in read-only mode
+        const writeOperations = ['create_record', 'update_record', 'delete_record'];
+        if (this.config.readOnlyMode && writeOperations.includes(name)) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  success: false,
+                  error: `🔒 Write operation '${name}' is disabled in read-only mode. Set SALESFORCE_READ_ONLY_MODE=false to enable write operations.`,
+                  readOnlyMode: true,
+                }, null, 2),
+              },
+            ],
+          };
         }
 
         switch (name) {

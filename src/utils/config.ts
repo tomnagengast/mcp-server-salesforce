@@ -3,7 +3,7 @@ import { SalesforceConfig } from '../types/index.js';
 
 config();
 
-export function getSalesforceConfig(): SalesforceConfig {
+export function getSalesforceConfig(): SalesforceConfig & { readOnlyMode: boolean } {
   const requiredEnvVars = [
     'SALESFORCE_CLIENT_ID',
     'SALESFORCE_CLIENT_SECRET',
@@ -25,5 +25,6 @@ export function getSalesforceConfig(): SalesforceConfig {
     username: process.env.SALESFORCE_USERNAME!,
     password: process.env.SALESFORCE_PASSWORD!,
     securityToken: process.env.SALESFORCE_SECURITY_TOKEN!,
+    readOnlyMode: process.env.SALESFORCE_READ_ONLY_MODE !== 'false', // Default to true for safety
   };
 }

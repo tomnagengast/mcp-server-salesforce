@@ -5,11 +5,16 @@ A Model Context Protocol (MCP) server that provides AI agents with secure access
 ## Features
 
 ### Core Capabilities
-- **Search & Query**: Search records across multiple objects, execute SOQL queries, and perform global searches
-- **CRUD Operations**: Create, read, update, and delete records with proper validation
-- **Relationship Navigation**: Access related records and view field history
-- **Secure Authentication**: OAuth 2.0 integration with proper token management
-- **Error Handling**: Comprehensive error handling with detailed feedback
+- **🔍 Search & Query**: Search records across multiple objects, execute SOQL queries, and perform global searches
+- **📖 Read Operations**: Retrieve specific records and navigate relationships 
+- **🔒 Security-First**: Starts in read-only mode by default for safe testing
+- **🔐 Secure Authentication**: OAuth 2.0 integration with proper token management
+- **⚡ Error Handling**: Comprehensive error handling with detailed feedback
+
+### Safety Features
+- **Read-Only by Default**: Server starts in safe read-only mode
+- **Configurable Write Access**: Enable write operations only when ready with `SALESFORCE_READ_ONLY_MODE=false`
+- **Clear Operation Indicators**: Write tools clearly marked in descriptions
 
 ### Supported Salesforce Objects
 - **Accounts**: Company and organization records
@@ -70,7 +75,12 @@ SALESFORCE_SECURITY_TOKEN=your_security_token
 # Server Configuration
 PORT=3000
 LOG_LEVEL=info
+
+# Security - Server starts in READ-ONLY mode by default
+SALESFORCE_READ_ONLY_MODE=true
 ```
+
+> 🔒 **Security Note**: The server starts in read-only mode by default. Set `SALESFORCE_READ_ONLY_MODE=false` only when you're comfortable with write operations.
 
 ## Claude Desktop Integration
 
@@ -130,7 +140,7 @@ npm run start
 }
 ```
 
-#### CRUD Tools
+#### Read Operations (Always Available)
 
 **get_record** - Retrieve a specific record
 ```json
@@ -140,6 +150,29 @@ npm run start
   "fields": ["Name", "Type", "Industry"]
 }
 ```
+
+**get_related_records** - Get related records
+```json
+{
+  "objectType": "Account",
+  "recordId": "001XXXXXXXXXX",
+  "relationship": "Contacts",
+  "limit": 20
+}
+```
+
+**get_record_history** - View field history
+```json
+{
+  "objectType": "Opportunity",
+  "recordId": "006XXXXXXXXXX",
+  "limit": 20
+}
+```
+
+#### Write Operations (Requires SALESFORCE_READ_ONLY_MODE=false)
+
+> ⚠️ **These operations modify your Salesforce data. Only enable when you're comfortable with the server's behavior.**
 
 **create_record** - Create a new record
 ```json
@@ -172,33 +205,40 @@ npm run start
 }
 ```
 
-#### Relationship Tools
+## Enabling Write Operations
 
-**get_related_records** - Get related records
-```json
-{
-  "objectType": "Account",
-  "recordId": "001XXXXXXXXXX",
-  "relationship": "Contacts",
-  "limit": 20
-}
-```
+When you're ready to enable write operations:
 
-**get_record_history** - View field history
-```json
-{
-  "objectType": "Opportunity",
-  "recordId": "006XXXXXXXXXX",
-  "limit": 20
-}
-```
+1. **Update environment:**
+   ```bash
+   # In your .env file
+   SALESFORCE_READ_ONLY_MODE=false
+   ```
+
+2. **Or in Claude Desktop config:**
+   ```json
+   {
+     "mcpServers": {
+       "salesforce": {
+         "command": "node",
+         "args": ["/path/to/your/mcp-server-salesforce/dist/index.js"],
+         "env": {
+           "SALESFORCE_READ_ONLY_MODE": "false",
+           // ... other env vars
+         }
+       }
+     }
+   }
+   ```
+
+3. **Restart the server** and Claude Desktop
 
 ## Use Cases
 
 ### Sales Team
 - **Pipeline Management**: "Show me all opportunities closing this quarter"
 - **Account Research**: "Find all contacts at Acme Corp with their recent activities"
-- **Lead Follow-up**: "Create tasks for all leads from yesterday's trade show"
+- **Lead Follow-up**: "Find all leads from yesterday's trade show" (read-only) or "Create tasks for all leads from yesterday's trade show" (write mode)
 
 ### Marketing Team
 - **Campaign Analysis**: "Show ROI for Q4 digital campaigns"

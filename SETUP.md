@@ -120,7 +120,12 @@ This guide will walk you through setting up the Salesforce MCP server from scrat
    # Server Configuration
    PORT=3000
    LOG_LEVEL=info
+   
+   # Security - Server starts in READ-ONLY mode by default for safety
+   SALESFORCE_READ_ONLY_MODE=true
    ```
+
+   > 🔒 **Important**: The server starts in read-only mode by default. This allows you to safely test queries and searches without risk of modifying your Salesforce data.
 
 ### Step 2: Build and Test
 
@@ -136,6 +141,8 @@ This guide will walk you through setting up the Salesforce MCP server from scrat
 
    You should see:
    ```
+   🔒 Salesforce MCP Server starting in READ-ONLY mode for safety
+      Set SALESFORCE_READ_ONLY_MODE=false to enable write operations
    Salesforce MCP server running on stdio
    Connected to Salesforce: { id: '...', organizationId: '...', url: '...' }
    ```
@@ -309,14 +316,57 @@ Test that the server respects your Salesforce permissions:
 3. **Verify Salesforce setup** with Workbench or API Explorer
 4. **Review Claude Desktop logs** for MCP connection issues
 
+## Enabling Write Operations
+
+The server starts in read-only mode for safety. When you're comfortable with the server's behavior:
+
+### Option 1: Environment Variable
+1. **Edit your .env file:**
+   ```env
+   SALESFORCE_READ_ONLY_MODE=false
+   ```
+
+2. **Restart the server:**
+   ```bash
+   npm run dev
+   ```
+
+### Option 2: Claude Desktop Config
+1. **Add to your config:**
+   ```json
+   {
+     "mcpServers": {
+       "salesforce": {
+         "command": "node",
+         "args": ["/path/to/your/mcp-server-salesforce/dist/index.js"],
+         "env": {
+           "SALESFORCE_READ_ONLY_MODE": "false",
+           "SALESFORCE_CLIENT_ID": "your_client_id",
+           // ... other credentials
+         }
+       }
+     }
+   }
+   ```
+
+2. **Restart Claude Desktop**
+
+You'll now have access to:
+- ✅ `create_record` - Create new records
+- ✅ `update_record` - Update existing records  
+- ✅ `delete_record` - Delete records
+
+> ⚠️ **Warning**: These operations modify your Salesforce data. Test in a sandbox first!
+
 ## Next Steps
 
 Once setup is complete:
 
-1. **Explore available tools** in Claude Desktop
-2. **Create shortcuts** for common queries
-3. **Train your team** on natural language commands
-4. **Monitor usage** and API limits in Salesforce
-5. **Consider custom objects** and additional integrations
+1. **Start with read-only operations** to explore your data
+2. **Test in sandbox** before enabling write operations in production
+3. **Create shortcuts** for common queries
+4. **Train your team** on natural language commands
+5. **Monitor usage** and API limits in Salesforce
+6. **Consider custom objects** and additional integrations
 
-Your Salesforce MCP server is now ready for production use!
+Your Salesforce MCP server is now ready for safe exploration!
